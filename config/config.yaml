@@ -1,5 +1,6 @@
 
 # CONFIGURACIÓN DEL PIPELINE ETL 
+#REALIZADO POR: Santiago Navia Soto
 # Calidad del Aire en India
 # Excel: catálogo de estaciones/sensores (dónde y qué se mide)
 # API: valores de calidad del aire en las coordenadas de esas estaciones

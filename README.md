@@ -33,6 +33,7 @@ Los datos pasan por tres capas organizadas de menor a mayor calidad:
 ```text
 medallon/
 ├── config/config.yaml          # Configuración de rutas, API y reglas de calidad
+├── dags/                       # DAG de Apache Airflow para automatizar el pipeline
 ├── data/
 │   ├── bronze/                 # Datos crudos (Excel + JSON de la API)
 │   ├── silver/                 # Datos limpios (sensores + serie horaria)
@@ -46,6 +47,7 @@ medallon/
 │   ├── extract/                # Lectura del Excel y consumo de la API por lotes
 │   ├── transform/              # Limpieza Silver, cálculo de NAQI India y capa Gold
 │   ├── quality/                # Controles de calidad de los datos y del JOIN
+│   ├── load/                   # Carga de la capa Gold a PostgreSQL (Data Warehouse)
 │   └── utils/                  # Configuración, logs y guardado incremental de CSV
 ├── tests/                      # Pruebas automatizadas con pytest
 ├── main.py                     # Archivo principal para ejecutar todo el pipeline
@@ -121,7 +123,28 @@ En **pgAdmin**, al desplegar `DB_GOLD_INDIA` $\rightarrow$ `Schemas` $\rightarro
 
 ---
 
-## 7. Columnas principales de la Capa Gold (`data/gold/gold_aire_india.csv`)
+## 7. Automatización con Apache Airflow (Docker)
+
+Para no tener que ejecutar el pipeline manualmente todos los días, el proyecto se conectó con **Apache Airflow** corriendo en **Docker Compose**.
+
+En el archivo [`dags/dag_calidad_aire_india.py`](dags/dag_calidad_aire_india.py) se creó el flujo automático (**DAG `etl_calidad_aire_india_medallion`**), que divide el trabajo en **7 pasos ordenados**:
+
+1. **`t1_extraer_excel_bronze`:** revisa y carga el archivo Excel de estaciones.
+2. **`t2_limpiar_excel_silver`:** limpia el catálogo de sensores y guarda el archivo Silver de sensores.
+3. **`t3_extraer_api_bronze`:** pide a la API de Open-Meteo los datos del día y guarda el JSON en Bronze.
+4. **`t4_limpiar_api_silver`:** limpia los datos horarios, los une con las estaciones y actualiza el archivo Silver horario.
+5. **`t5_construir_capa_gold`:** calcula los promedios diarios, el índice europeo (EAQI), el índice de India (NAQI) y los rankings en la capa Gold.
+6. **`t6_validar_calidad_integracion`:** revisa que no haya datos duplicados, vacíos ni fuera de rango antes de tocar la base de datos. Si algo está mal, detiene el proceso y avisa del error.
+7. **`t7_cargar_postgres_datawarehouse`:** sube los resultados validados directamente a **PostgreSQL (`DB_GOLD_INDIA`)** para verlos en pgAdmin.
+
+### ¿Cómo se usa desde el navegador?
+1. Se levanta Airflow con Docker (`docker compose up -d` en la carpeta `airflow-medallon`).
+2. Se entra a **[http://localhost:8080](http://localhost:8080)**.
+3. Ahí aparece el flujo **`etl_calidad_aire_india_medallion`**, donde se puede ejecutar con un clic y ver en verde cada uno de los 7 pasos y sus registros de ejecución.
+
+---
+
+## 8. Columnas principales de la Capa Gold (`data/gold/gold_aire_india.csv`)
 
 | Grupo | Columnas principales | Descripción sencilla |
 | :--- | :--- | :--- |
