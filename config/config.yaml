@@ -1,0 +1,82 @@
+
+# CONFIGURACIÓN DEL PIPELINE ETL 
+# Calidad del Aire en India
+# Excel: catálogo de estaciones/sensores (dónde y qué se mide)
+# API: valores de calidad del aire en las coordenadas de esas estaciones
+
+
+project:
+  name: "Pipeline ETL Calidad del Aire - India"
+  version: "3.1"
+  description: "Excel de estaciones de India complementado con valores de calidad del aire desde una API REST (sin datos climáticos)"
+  author: "Santiago Navia Soto"
+  license: "MIT"
+  date: "2026-10-30"
+
+logging:
+  archivo: logs/log.txt            # registro de cada ejecucion (se agrega al final)
+  resumen_ejecucion: logs/run_summary.json   # metricas de la ultima ejecucion
+  nivel: INFO
+
+path:
+  data_dir: data
+  bronze_dir: data/bronze
+  silver_dir: data/silver
+  gold_dir: data/gold
+
+  # Capa Bronze (datos crudos sin modificar) 
+  bronze_excel_india: data/bronze/AIR_QUALITY_INDIA_DATASET.xlsx
+  bronze_api_india_json: data/bronze/bronze_aire_india_api.json
+
+  # Capa Silver (datos limpios, tipados y filtrados) 
+  silver_sensores_india_dir: data/silver/silver_aire_india_sensores.csv      # Excel: un sensor por fila
+  silver_aire_india_horario_dir: data/silver/silver_aire_india_horario.csv   # API: una estación por hora
+
+  # Capa Gold (indicadores por estación: Excel + API) 
+  gold_aire_india_dir: data/gold/gold_aire_india.csv
+  reporte_coordenadas_compartidas_dir: data/gold/reporte_coordenadas_compartidas.csv
+
+quality:
+  umbral_cobertura_join: 0.95       # minimo 95% de estaciones del catalogo con respuesta de API
+  distancia_alerta_km: 15.0         # umbral de distancia (km) estacion <-> punto de rejilla CAMS
+  dias_vigencia_estacion: 365       # dias desde ultima medicion para considerar activa una estacion
+
+  #Rutas del proyecto 
+  logs_dir: logs
+  notebooks_dir: notebooks
+  scripts_dir: src
+  extract_dir: src/extract
+  transform_dir: src/transform
+  load_dir: src/load
+
+sources:
+  aire_india_excel:
+    path: data/bronze/AIR_QUALITY_INDIA_DATASET.xlsx
+    file_type: excel
+    country: "India"
+    description: "Estaciones y sensores de calidad del aire en India (se conservan solo contaminantes de aire)"
+
+  aire_india_api:
+    # API de Calidad del Aire de Open-Meteo (modelo Copernicus CAMS).
+    # Se consulta con las coordenadas de las estaciones del Excel.
+    # Devuelve el valor MODELADO del punto de rejilla más cercano (~11 km), no la lectura del sensor.
+    url: "https://air-quality-api.open-meteo.com/v1/air-quality"
+    file_type: api
+    country: "India"
+    author: "open-meteo.com / Copernicus CAMS"
+    batch_size: 50              # coordenadas por petición
+    pausa_segundos: 1           # pausa entre peticiones (límite de uso gratuito)
+    decimales_coordenadas: 1    # 0.1 grados ~ resolución del modelo; evita consultas repetidas
+    params:
+      timezone: "Asia/Kolkata"
+      past_days: 0              # 0 = datos de hoy
+      forecast_days: 1
+      # Solo contaminantes del aire
+      hourly:
+        - pm10
+        - pm2_5
+        - carbon_monoxide
+        - nitrogen_dioxide
+        - sulphur_dioxide
+        - ozone
+        - european_aqi

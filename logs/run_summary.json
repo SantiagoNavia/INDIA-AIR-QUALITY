@@ -1,0 +1,60 @@
+{
+  "inicio": "2026-11-01T22:03:26",
+  "modo": "completo",
+  "bronze": {
+    "excel_filas": 9627,
+    "excel_estaciones": 764,
+    "api_puntos_consulta": 460,
+    "api_estaciones_en_punto_compartido": 427,
+    "api_filas_horarias": 11040,
+    "api_json_bytes": 2495210
+  },
+  "silver": {
+    "sensores": 7233,
+    "estaciones": 763,
+    "horario_filas_lote": 18312,
+    "horario_filas_totales": 54984,
+    "horario_estaciones_con_api": 763
+  },
+  "gold": {
+    "filas_lote": 763,
+    "filas_historicas_conservadas": 1526,
+    "filas_totales": 2289,
+    "estaciones": 763,
+    "fechas": [
+      "2026-11-02"
+    ],
+    "filas_sin_api": 0,
+    "eaqi_promedio_nacional": 65.43,
+    "naqi_india_promedio_nacional": 126.01
+  },
+  "calidad": {
+    "unicidad_claves_ok": true,
+    "coordenadas_en_india_ok": true,
+    "rangos_contaminantes_ok": true,
+    "estaciones_catalogo": 763,
+    "estaciones_con_api": 763,
+    "cobertura_join_pct": 100.0,
+    "puntos_consulta_unicos": 460,
+    "estaciones_en_punto_compartido": 427,
+    "max_estaciones_por_punto": 23,
+    "distancia_modelo_promedio_km": 4.19,
+    "distancia_modelo_max_km": 7.56,
+    "estaciones_sobre_umbral_distancia": 0,
+    "estaciones_activas_ultimo_anio": 629,
+    "estaciones_inactivas_con_dato_modelado": 134
+  },
+  "duracion_segundos": 23.87,
+  "datawarehouse": {
+    "registros_cargados": 2289,
+    "base_datos": "PostgreSQL",
+    "tabla": "gold_aire_india",
+    "vistas": [
+      "vw_dim_estaciones",
+      "vw_fact_calidad_aire_diaria",
+      "vw_top_peor_aire"
+    ]
+  },
+  "estado": "OK",
+  "fin": "2026-11-01T22:03:50"
+}

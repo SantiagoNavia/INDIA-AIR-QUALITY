@@ -1,0 +1,25 @@
+# --- Entornos virtuales (nunca se entregan) ---
+venv/
+.venv/
+env/
+ENV/
+
+# --- Credenciales y configuracion sensible ---
+.env
+.env.*
+!.env.example
+
+# --- Caches de Python / herramientas ---
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+.cache.sqlite
+
+# --- Logs: SE CONSERVAN (son evidencia de ejecucion para la entrega) ---
+
+# --- Artefactos de empaquetado ---
+dist/
+*.zip

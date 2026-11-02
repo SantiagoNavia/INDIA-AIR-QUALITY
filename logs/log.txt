@@ -1,0 +1,202 @@
+2026-11-01 16:33:22 | INFO    | etl                          | ======================================================================
+2026-11-01 16:33:22 | INFO    | etl                          | ETL DE CALIDAD DEL AIRE EN INDIA - ARQUITECTURA MEDALLION (modo: solo_gold)
+2026-11-01 16:33:22 | INFO    | etl                          | Excel (estaciones) + API REST Open-Meteo (valores MODELADOS de calidad del aire)
+2026-11-01 16:33:22 | INFO    | etl                          | ======================================================================
+2026-11-01 16:33:22 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 16:33:22 | INFO    | etl                          | >>> MODO --solo-gold: Gold desde archivos Silver
+2026-11-01 16:33:22 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 16:33:23 | INFO    | etl                          | Silver leidos: 7,233 sensores, 36,672 filas horarias
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     | [GOLD - INDIA] Indicadores por estacion (Excel + API: EAQI europeo + NAQI India)
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     | Filas estacion-fecha: 1526 | con API: 1526 | sin API: 0 | estaciones en celda compartida: 427
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     | Categoria predominante EAQI (Europeo) del lote actual:
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     |   - Pobre                 :  579 filas estacion-fecha
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     |   - Moderado              :  550 filas estacion-fecha
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     |   - Muy pobre             :  158 filas estacion-fecha
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     |   - Bueno                 :  154 filas estacion-fecha
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     |   - Extremadamente pobre  :   85 filas estacion-fecha
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     | Categoria NAQI (India CPCB) del lote actual:
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     |   - Moderado              :  847 filas estacion-fecha
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     |   - Satisfactorio         :  582 filas estacion-fecha
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     |   - Muy pobre             :   66 filas estacion-fecha
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     |   - Pobre                 :   19 filas estacion-fecha
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     |   - Bueno                 :    9 filas estacion-fecha
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     |   - Severo                :    3 filas estacion-fecha
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     | Top 5 estaciones con peor aire (lote actual):
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     |   Urban Estate-II, Hisar - HSPCB             2026-10-14 EAQI  213.6 | NAQI 500.0 | PM2.5  119.1
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     |   Siddharth Nagar-Worli, Mumbai - IITM       2026-10-15 EAQI  184.4 | NAQI 307.8 | PM2.5   62.9
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     |   Deonar, Mumbai - IITM                      2026-10-15 EAQI  184.4 | NAQI 307.8 | PM2.5   62.9
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     |   Bandra Kurla Complex, Mumbai - IITM        2026-10-15 EAQI  184.4 | NAQI 307.8 | PM2.5   62.9
+2026-11-01 16:33:23 | INFO    | src.transform.gold_india     |   Kandivali East, Mumbai - MPCB              2026-10-15 EAQI  184.4 | NAQI 307.8 | PM2.5   62.9
+2026-11-01 16:33:23 | INFO    | src.utils.io                 | [INCREMENTAL] data/gold/gold_aire_india.csv: 0 filas previas conservadas + 1,526 nuevas/actualizadas = 1,526
+2026-11-01 16:33:23 | INFO    | src.utils.io                 | Archivo guardado: data/gold/gold_aire_india.csv (1,526 filas)
+2026-11-01 16:33:23 | INFO    | src.utils.io                 | Archivo guardado: data/gold/reporte_coordenadas_compartidas.csv (460 filas)
+2026-11-01 16:33:23 | INFO    | src.quality.checks           | [CALIDAD] Ejecutando controles de calidad e integracion...
+2026-11-01 16:33:23 | INFO    | src.quality.checks           | [CALIDAD OK] Cobertura JOIN: 100.0% (763/763) | Puntos unicos: 460 | Compartidas: 427 est. | Dist. media al modelo: 4.19 km (max 7.56 km) | Activas ultimo año: 630/763
+2026-11-01 16:33:23 | INFO    | etl                          | Resumen de ejecucion guardado en logs/run_summary.json
+2026-11-01 16:33:23 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 16:33:23 | INFO    | etl                          | >>> ETAPA 04 - VALIDACION Y ENTREGA (Artefactos generados)
+2026-11-01 16:33:23 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 16:33:23 | INFO    | etl                          | [OK]    bronze_excel_india                     -> data/bronze/AIR_QUALITY_INDIA_DATASET.xlsx
+2026-11-01 16:33:23 | INFO    | etl                          | [OK]    bronze_api_india_json                  -> data/bronze/bronze_aire_india_api.json
+2026-11-01 16:33:23 | INFO    | etl                          | [OK]    silver_sensores_india_dir              -> data/silver/silver_aire_india_sensores.csv
+2026-11-01 16:33:23 | INFO    | etl                          | [OK]    silver_aire_india_horario_dir          -> data/silver/silver_aire_india_horario.csv
+2026-11-01 16:33:23 | INFO    | etl                          | [OK]    gold_aire_india_dir                    -> data/gold/gold_aire_india.csv
+2026-11-01 16:33:23 | INFO    | etl                          | [OK]    reporte_coordenadas_compartidas_dir    -> data/gold/reporte_coordenadas_compartidas.csv
+2026-11-01 16:33:23 | INFO    | etl                          | ======================================================================
+2026-11-01 16:33:23 | INFO    | etl                          | Pipeline completado con exito en 0.55s.
+2026-11-01 16:33:23 | INFO    | etl                          | ======================================================================
+2026-11-01 19:26:44 | INFO    | __main__                     | [DATAWAREHOUSE] Leyendo datos Gold desde: C:\Users\ns645\OneDrive\Documentos\PARCIAL 2ndo corte\medallon\data\gold\gold_aire_india.csv
+2026-11-01 19:26:44 | INFO    | __main__                     | [DATAWAREHOUSE] Iniciando carga de 1526 registros a PostgreSQL...
+2026-11-01 19:26:45 | INFO    | __main__                     | [DATAWAREHOUSE] Vistas analiticas creadas en PostgreSQL (vw_dim_estaciones, vw_fact_calidad_aire_diaria, vw_top_peor_aire).
+2026-11-01 19:26:45 | INFO    | __main__                     | [DATAWAREHOUSE OK] Carga completada exitosamente. Total registros en PostgreSQL (gold_aire_india): 1526
+2026-11-01 19:28:58 | INFO    | etl                          | ======================================================================
+2026-11-01 19:28:58 | INFO    | etl                          | ETL DE CALIDAD DEL AIRE EN INDIA - ARQUITECTURA MEDALLION (modo: solo_gold)
+2026-11-01 19:28:58 | INFO    | etl                          | Excel (estaciones) + API REST Open-Meteo (valores MODELADOS de calidad del aire)
+2026-11-01 19:28:58 | INFO    | etl                          | ======================================================================
+2026-11-01 19:28:58 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 19:28:58 | INFO    | etl                          | >>> MODO --solo-gold: Gold desde archivos Silver
+2026-11-01 19:28:58 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 19:28:58 | INFO    | etl                          | Silver leidos: 7,233 sensores, 36,672 filas horarias
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     | [GOLD - INDIA] Indicadores por estacion (Excel + API: EAQI europeo + NAQI India)
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     | Filas estacion-fecha: 1526 | con API: 1526 | sin API: 0 | estaciones en celda compartida: 427
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     | Categoria predominante EAQI (Europeo) del lote actual:
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     |   - Pobre                 :  579 filas estacion-fecha
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     |   - Moderado              :  550 filas estacion-fecha
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     |   - Muy pobre             :  158 filas estacion-fecha
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     |   - Bueno                 :  154 filas estacion-fecha
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     |   - Extremadamente pobre  :   85 filas estacion-fecha
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     | Categoria NAQI (India CPCB) del lote actual:
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     |   - Moderado              :  847 filas estacion-fecha
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     |   - Satisfactorio         :  582 filas estacion-fecha
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     |   - Muy pobre             :   66 filas estacion-fecha
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     |   - Pobre                 :   19 filas estacion-fecha
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     |   - Bueno                 :    9 filas estacion-fecha
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     |   - Severo                :    3 filas estacion-fecha
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     | Top 5 estaciones con peor aire (lote actual):
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     |   Urban Estate-II, Hisar - HSPCB             2026-10-14 EAQI  213.6 | NAQI 500.0 | PM2.5  119.1
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     |   Siddharth Nagar-Worli, Mumbai - IITM       2026-10-15 EAQI  184.4 | NAQI 307.8 | PM2.5   62.9
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     |   Deonar, Mumbai - IITM                      2026-10-15 EAQI  184.4 | NAQI 307.8 | PM2.5   62.9
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     |   Bandra Kurla Complex, Mumbai - IITM        2026-10-15 EAQI  184.4 | NAQI 307.8 | PM2.5   62.9
+2026-11-01 19:28:58 | INFO    | src.transform.gold_india     |   Kandivali East, Mumbai - MPCB              2026-10-15 EAQI  184.4 | NAQI 307.8 | PM2.5   62.9
+2026-11-01 19:28:58 | INFO    | src.utils.io                 | [INCREMENTAL] data/gold/gold_aire_india.csv: 0 filas previas conservadas + 1,526 nuevas/actualizadas = 1,526
+2026-11-01 19:28:59 | INFO    | src.utils.io                 | Archivo guardado: data/gold/gold_aire_india.csv (1,526 filas)
+2026-11-01 19:28:59 | INFO    | src.utils.io                 | Archivo guardado: data/gold/reporte_coordenadas_compartidas.csv (460 filas)
+2026-11-01 19:28:59 | INFO    | src.quality.checks           | [CALIDAD] Ejecutando controles de calidad e integracion...
+2026-11-01 19:28:59 | INFO    | src.quality.checks           | [CALIDAD OK] Cobertura JOIN: 100.0% (763/763) | Puntos unicos: 460 | Compartidas: 427 est. | Dist. media al modelo: 4.19 km (max 7.56 km) | Activas ultimo año: 630/763
+2026-11-01 19:28:59 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 19:28:59 | INFO    | etl                          | >>> ETAPA 05 - CARGA A DATA WAREHOUSE (PostgreSQL)
+2026-11-01 19:28:59 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 19:28:59 | INFO    | src.load.load_datawarehouse  | [DATAWAREHOUSE] Leyendo datos Gold desde: C:\Users\ns645\OneDrive\Documentos\PARCIAL 2ndo corte\medallon\data\gold\gold_aire_india.csv
+2026-11-01 19:28:59 | INFO    | src.load.load_datawarehouse  | [DATAWAREHOUSE] Iniciando carga de 1526 registros a PostgreSQL...
+2026-11-01 19:28:59 | INFO    | src.load.load_datawarehouse  | [DATAWAREHOUSE] Vistas analiticas creadas en PostgreSQL (vw_dim_estaciones, vw_fact_calidad_aire_diaria, vw_top_peor_aire).
+2026-11-01 19:28:59 | INFO    | src.load.load_datawarehouse  | [DATAWAREHOUSE OK] Carga completada exitosamente. Total registros en PostgreSQL (gold_aire_india): 1526
+2026-11-01 19:28:59 | INFO    | etl                          | Resumen de ejecucion guardado en logs/run_summary.json
+2026-11-01 19:28:59 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 19:28:59 | INFO    | etl                          | >>> ETAPA 04 - VALIDACION Y ENTREGA (Artefactos generados)
+2026-11-01 19:28:59 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 19:28:59 | INFO    | etl                          | [OK]    bronze_excel_india                     -> data/bronze/AIR_QUALITY_INDIA_DATASET.xlsx
+2026-11-01 19:28:59 | INFO    | etl                          | [OK]    bronze_api_india_json                  -> data/bronze/bronze_aire_india_api.json
+2026-11-01 19:28:59 | INFO    | etl                          | [OK]    silver_sensores_india_dir              -> data/silver/silver_aire_india_sensores.csv
+2026-11-01 19:28:59 | INFO    | etl                          | [OK]    silver_aire_india_horario_dir          -> data/silver/silver_aire_india_horario.csv
+2026-11-01 19:28:59 | INFO    | etl                          | [OK]    gold_aire_india_dir                    -> data/gold/gold_aire_india.csv
+2026-11-01 19:28:59 | INFO    | etl                          | [OK]    reporte_coordenadas_compartidas_dir    -> data/gold/reporte_coordenadas_compartidas.csv
+2026-11-01 19:28:59 | INFO    | etl                          | ======================================================================
+2026-11-01 19:28:59 | INFO    | etl                          | Pipeline completado con exito en 0.49s.
+2026-11-01 19:28:59 | INFO    | etl                          | ======================================================================
+2026-11-01 22:03:26 | INFO    | etl                          | ======================================================================
+2026-11-01 22:03:26 | INFO    | etl                          | ETL DE CALIDAD DEL AIRE EN INDIA - ARQUITECTURA MEDALLION (modo: completo)
+2026-11-01 22:03:26 | INFO    | etl                          | Excel (estaciones) + API REST Open-Meteo (valores MODELADOS de calidad del aire)
+2026-11-01 22:03:26 | INFO    | etl                          | ======================================================================
+2026-11-01 22:03:26 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 22:03:26 | INFO    | etl                          | >>> ETAPA 01 - EXTRACCION / BRONZE (Datos crudos)
+2026-11-01 22:03:26 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 22:03:26 | INFO    | src.extract.extract_excel    | [BRONZE - EXCEL] Extrayendo dataset de India desde: data/bronze/AIR_QUALITY_INDIA_DATASET.xlsx
+2026-11-01 22:03:26 | INFO    | src.extract.extract_excel    | Registros crudos cargados: 9,627 filas, 12 columnas, 764 estaciones.
+2026-11-01 22:03:26 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 22:03:26 | INFO    | etl                          | >>> ETAPA 02a - TRANSFORMACION / SILVER Excel (Limpieza y estandarizacion)
+2026-11-01 22:03:26 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 22:03:26 | INFO    | src.transform.clean_excel    | [SILVER - INDIA] Iniciando transformacion y limpieza de calidad del aire en India
+2026-11-01 22:03:26 | INFO    | src.transform.clean_excel    | Filtrado de variables: 9,627 filas crudas -> 7,233 registros de calidad del aire.
+2026-11-01 22:03:26 | INFO    | src.transform.clean_excel    | (Se eliminaron 2,394 filas de variables climaticas: temperatura, humedad, viento, etc.)
+2026-11-01 22:03:26 | INFO    | src.transform.clean_excel    | Duplicados eliminados por sensor_id: 0
+2026-11-01 22:03:26 | INFO    | src.transform.clean_excel    | Tratamiento de nulos: 11 sensores sin fecha tratados (dias_monitoreo=0.0, flag tiene_historial_fechas=False).
+2026-11-01 22:03:26 | INFO    | src.transform.clean_excel    | Resumen Silver India: 7,233 sensores de aire | 763 estaciones | contaminantes: ['carbon_monoxide', 'nitrogen_dioxide', 'nitrogen_monoxide', 'nitrogen_oxides', 'ozone', 'pm1', 'pm10', 'pm2_5', 'sulfur_dioxide']
+2026-11-01 22:03:27 | INFO    | src.utils.io                 | Archivo guardado: data/silver/silver_aire_india_sensores.csv (7,233 filas)
+2026-11-01 22:03:27 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 22:03:27 | INFO    | etl                          | >>> ETAPA 01b - EXTRACCION / BRONZE API
+2026-11-01 22:03:27 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 22:03:27 | INFO    | src.extract.extract_api      | Estaciones: 763 | puntos de consulta unicos: 460 | estaciones que comparten punto: 427 (max 23 por punto)
+2026-11-01 22:03:27 | INFO    | src.extract.extract_api      | [BRONZE - API REST] https://air-quality-api.open-meteo.com/v1/air-quality
+2026-11-01 22:03:27 | INFO    | src.extract.extract_api      | Estaciones del Excel: 763 -> coordenadas unicas a consultar: 460
+2026-11-01 22:03:27 | INFO    | src.extract.extract_api      | Peticiones: 10 lotes de hasta 50 coordenadas
+2026-11-01 22:03:29 | INFO    | src.extract.extract_api      | Lote 1/10: 50 coordenadas OK
+2026-11-01 22:03:31 | INFO    | src.extract.extract_api      | Lote 2/10: 50 coordenadas OK
+2026-11-01 22:03:34 | INFO    | src.extract.extract_api      | Lote 3/10: 50 coordenadas OK
+2026-11-01 22:03:36 | INFO    | src.extract.extract_api      | Lote 4/10: 50 coordenadas OK
+2026-11-01 22:03:38 | INFO    | src.extract.extract_api      | Lote 5/10: 50 coordenadas OK
+2026-11-01 22:03:40 | INFO    | src.extract.extract_api      | Lote 6/10: 50 coordenadas OK
+2026-11-01 22:03:42 | INFO    | src.extract.extract_api      | Lote 7/10: 50 coordenadas OK
+2026-11-01 22:03:44 | INFO    | src.extract.extract_api      | Lote 8/10: 50 coordenadas OK
+2026-11-01 22:03:46 | INFO    | src.extract.extract_api      | Lote 9/10: 50 coordenadas OK
+2026-11-01 22:03:48 | INFO    | src.extract.extract_api      | Lote 10/10: 10 coordenadas OK
+2026-11-01 22:03:48 | INFO    | src.extract.extract_api      | Respuestas originales guardadas en Bronze: data/bronze/bronze_aire_india_api.json
+2026-11-01 22:03:48 | INFO    | src.extract.extract_api      | Serie horaria cruda: 11,040 filas (2026-11-02 00:00:00 a 2026-11-02 23:00:00)
+2026-11-01 22:03:48 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 22:03:48 | INFO    | etl                          | >>> ETAPA 02b - TRANSFORMACION / SILVER API (Limpieza y estandarizacion)
+2026-11-01 22:03:48 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 22:03:48 | INFO    | src.transform.clean_api      | [SILVER - INDIA API] Limpieza de valores de calidad del aire
+2026-11-01 22:03:48 | INFO    | src.transform.clean_api      | Filas crudas: 11,040 -> sin duplicados ni fechas vacias: 11,040
+2026-11-01 22:03:48 | INFO    | src.transform.clean_api      | Estaciones con datos de la API: 763 (sin datos: 0)
+2026-11-01 22:03:48 | INFO    | src.transform.clean_api      | Valores negativos anulados: 0
+2026-11-01 22:03:48 | INFO    | src.transform.clean_api      | Nulos: 0 antes de interpolar -> 0 despues
+2026-11-01 22:03:48 | INFO    | src.transform.clean_api      | Resultado: 18,312 filas (763 estaciones x 24 horas)
+2026-11-01 22:03:49 | INFO    | src.utils.io                 | [INCREMENTAL] data/silver/silver_aire_india_horario.csv: 36,672 filas previas conservadas + 18,312 nuevas/actualizadas = 54,984
+2026-11-01 22:03:49 | INFO    | src.utils.io                 | Archivo guardado: data/silver/silver_aire_india_horario.csv (54,984 filas)
+2026-11-01 22:03:49 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 22:03:49 | INFO    | etl                          | >>> ETAPA 03 - CAPA GOLD E INTEGRACION (Indicadores EAQI + NAQI India + Calidad)
+2026-11-01 22:03:49 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 22:03:49 | INFO    | src.transform.gold_india     | [GOLD - INDIA] Indicadores por estacion (Excel + API: EAQI europeo + NAQI India)
+2026-11-01 22:03:50 | INFO    | src.transform.gold_india     | Filas estacion-fecha: 763 | con API: 763 | sin API: 0 | estaciones en celda compartida: 427
+2026-11-01 22:03:50 | INFO    | src.transform.gold_india     | Categoria predominante EAQI (Europeo) del lote actual:
+2026-11-01 22:03:50 | INFO    | src.transform.gold_india     |   - Moderado              :  368 filas estacion-fecha
+2026-11-01 22:03:50 | INFO    | src.transform.gold_india     |   - Muy pobre             :  152 filas estacion-fecha
+2026-11-01 22:03:50 | INFO    | src.transform.gold_india     |   - Pobre                 :  144 filas estacion-fecha
+2026-11-01 22:03:50 | INFO    | src.transform.gold_india     |   - Bueno                 :   57 filas estacion-fecha
+2026-11-01 22:03:50 | INFO    | src.transform.gold_india     |   - Extremadamente pobre  :   40 filas estacion-fecha
+2026-11-01 22:03:50 | INFO    | src.transform.gold_india     |   - Muy bueno             :    2 filas estacion-fecha
+2026-11-01 22:03:50 | INFO    | src.transform.gold_india     | Categoria NAQI (India CPCB) del lote actual:
+2026-11-01 22:03:50 | INFO    | src.transform.gold_india     |   - Satisfactorio         :  435 filas estacion-fecha
+2026-11-01 22:03:50 | INFO    | src.transform.gold_india     |   - Pobre                 :  161 filas estacion-fecha
+2026-11-01 22:03:50 | INFO    | src.transform.gold_india     |   - Moderado              :  143 filas estacion-fecha
+2026-11-01 22:03:50 | INFO    | src.transform.gold_india     |   - Bueno                 :   23 filas estacion-fecha
+2026-11-01 22:03:50 | INFO    | src.transform.gold_india     |   - Muy pobre             :    1 filas estacion-fecha
+2026-11-01 22:03:50 | INFO    | src.transform.gold_india     | Top 5 estaciones con peor aire (lote actual):
+2026-11-01 22:03:50 | INFO    | src.transform.gold_india     |   Rishi Nagar, Kaithal - HSPCB               2026-11-02 EAQI  106.5 | NAQI 271.0 | PM2.5  111.2
+2026-11-01 22:03:50 | INFO    | src.transform.gold_india     |   Rishi Nagar, Kaithal - HSPCB               2026-11-02 EAQI  106.5 | NAQI 271.0 | PM2.5  111.2
+2026-11-01 22:03:50 | INFO    | src.transform.gold_india     |   Knowledge Park - III, Greater Noida - UPPC 2026-11-02 EAQI  101.4 | NAQI 267.4 | PM2.5  110.1
+2026-11-01 22:03:50 | INFO    | src.transform.gold_india     |   Yamunapuram, Bulandshahr - UPPCB           2026-11-02 EAQI  101.4 | NAQI 267.4 | PM2.5  110.1
+2026-11-01 22:03:50 | INFO    | src.transform.gold_india     |   Kalindi Kunj, Khurja - UPPCB               2026-11-02 EAQI  101.3 | NAQI 266.3 | PM2.5  109.8
+2026-11-01 22:03:50 | INFO    | src.utils.io                 | [INCREMENTAL] data/gold/gold_aire_india.csv: 1,526 filas previas conservadas + 763 nuevas/actualizadas = 2,289
+2026-11-01 22:03:50 | INFO    | src.utils.io                 | Archivo guardado: data/gold/gold_aire_india.csv (2,289 filas)
+2026-11-01 22:03:50 | INFO    | src.utils.io                 | Archivo guardado: data/gold/reporte_coordenadas_compartidas.csv (460 filas)
+2026-11-01 22:03:50 | INFO    | src.quality.checks           | [CALIDAD] Ejecutando controles de calidad e integracion...
+2026-11-01 22:03:50 | INFO    | src.quality.checks           | [CALIDAD OK] Cobertura JOIN: 100.0% (763/763) | Puntos unicos: 460 | Compartidas: 427 est. | Dist. media al modelo: 4.19 km (max 7.56 km) | Activas ultimo año: 629/763
+2026-11-01 22:03:50 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 22:03:50 | INFO    | etl                          | >>> ETAPA 04 - CARGA AUTOMATICA A DATA WAREHOUSE (PostgreSQL)
+2026-11-01 22:03:50 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 22:03:50 | INFO    | src.load.load_datawarehouse  | [DATAWAREHOUSE] Iniciando carga de 2289 registros a PostgreSQL...
+2026-11-01 22:03:50 | INFO    | src.load.load_datawarehouse  | [DATAWAREHOUSE] Vistas analiticas creadas en PostgreSQL (vw_dim_estaciones, vw_fact_calidad_aire_diaria, vw_top_peor_aire).
+2026-11-01 22:03:50 | INFO    | src.load.load_datawarehouse  | [DATAWAREHOUSE OK] Carga completada exitosamente. Total registros en PostgreSQL (gold_aire_india): 2289
+2026-11-01 22:03:50 | INFO    | etl                          | Resumen de ejecucion guardado en logs/run_summary.json
+2026-11-01 22:03:50 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 22:03:50 | INFO    | etl                          | >>> ETAPA 04 - VALIDACION Y ENTREGA (Artefactos generados)
+2026-11-01 22:03:50 | INFO    | etl                          | ----------------------------------------------------------------------
+2026-11-01 22:03:50 | INFO    | etl                          | [OK]    bronze_excel_india                     -> data/bronze/AIR_QUALITY_INDIA_DATASET.xlsx
+2026-11-01 22:03:50 | INFO    | etl                          | [OK]    bronze_api_india_json                  -> data/bronze/bronze_aire_india_api.json
+2026-11-01 22:03:50 | INFO    | etl                          | [OK]    silver_sensores_india_dir              -> data/silver/silver_aire_india_sensores.csv
+2026-11-01 22:03:50 | INFO    | etl                          | [OK]    silver_aire_india_horario_dir          -> data/silver/silver_aire_india_horario.csv
+2026-11-01 22:03:50 | INFO    | etl                          | [OK]    gold_aire_india_dir                    -> data/gold/gold_aire_india.csv
+2026-11-01 22:03:50 | INFO    | etl                          | [OK]    reporte_coordenadas_compartidas_dir    -> data/gold/reporte_coordenadas_compartidas.csv
+2026-11-01 22:03:50 | INFO    | etl                          | ======================================================================
+2026-11-01 22:03:50 | INFO    | etl                          | Pipeline completado con exito en 23.87s.
+2026-11-01 22:03:50 | INFO    | etl                          | ======================================================================

@@ -1,0 +1,13 @@
+# Dependencias de base de datos / Data Warehouse (PostgreSQL)
+sqlalchemy>=2.0
+psycopg2-binary>=2.9
+python-dotenv>=1.0
+
+pandas>=2.2
+numpy>=1.26
+openpyxl>=3.1          # lectura del Excel (pd.read_excel)
+requests>=2.31         # consumo de la API REST de Open-Meteo
+PyYAML>=6.0            # lectura de config/config.yaml
+matplotlib>=3.8        # graficos del notebook
+seaborn>=0.13          # graficos del notebook
+ipykernel              # ejecutar el notebook
