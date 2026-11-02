@@ -134,3 +134,29 @@ def extraer_api_india(fuente: dict, df_estaciones: pd.DataFrame, ruta_bronze_jso
     log.info("Serie horaria cruda: %s filas (%s a %s)",
              f"{len(df_horario):,}", df_horario["date"].min(), df_horario["date"].max())
     return df_horario
+
+
+def leer_bronze_api_json(ruta_bronze_json: str) -> pd.DataFrame:
+    """Reconstruye el DataFrame horario crudo a partir del archivo JSON guardado en Bronze.
+
+    Permite desacoplar la tarea de extraccion (Bronze) de la tarea de limpieza (Silver)
+    en orquestadores como Apache Airflow sin pasar DataFrames grandes por XCom.
+    """
+    with open(ruta_bronze_json, "r", encoding="utf-8") as f:
+        bronze = json.load(f)
+
+    tablas = []
+    for lote in bronze.get("lotes", []):
+        lats = lote["consulta"]["latitude"]
+        lons = lote["consulta"]["longitude"]
+        for (lat, lon), r in zip(zip(lats, lons), lote["respuesta"]):
+            t = pd.DataFrame(r["hourly"])
+            t["lat_consulta"] = lat
+            t["lon_consulta"] = lon
+            t["lat_modelo"] = r["latitude"]
+            t["lon_modelo"] = r["longitude"]
+            tablas.append(t)
+
+    df_horario = pd.concat(tablas, ignore_index=True).rename(columns={"time": "date"})
+    df_horario["date"] = pd.to_datetime(df_horario["date"])
+    return df_horario

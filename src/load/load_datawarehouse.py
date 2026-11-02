@@ -25,7 +25,13 @@ for ruta_env in [RUTA_BASE / ".env", Path(".env")]:
 
 
 def obtener_motor_postgres() -> Engine:
-    """Construye el motor SQLAlchemy utilizando variables de entorno."""
+    """Construye el motor SQLAlchemy utilizando variables de entorno.
+
+    Si se ejecuta dentro de un contenedor Docker (como Apache Airflow) y el host
+    configurado es 'localhost' o '127.0.0.1', lo traduce automaticamente a
+    'host.docker.internal' para alcanzar el PostgreSQL instalado en la maquina anfitriona.
+    """
+    en_docker = os.path.exists("/.dockerenv")
     url = os.getenv("DATABASE_URL")
     if not url:
         user = os.getenv("DB_USER", "postgres")
@@ -34,6 +40,12 @@ def obtener_motor_postgres() -> Engine:
         port = os.getenv("DB_PORT", "5432")
         db = os.getenv("DB_NAME", "DB_GOLD_INDIA")
         url = f"postgresql+psycopg2://{user}:{pwd}@{host}:{port}/{db}"
+
+    if en_docker and ("@localhost:" in url or "@127.0.0.1:" in url):
+        url = url.replace("@localhost:", "@host.docker.internal:").replace(
+            "@127.0.0.1:", "@host.docker.internal:"
+        )
+        log.info("[DATAWAREHOUSE] Contenedor Docker detectado: usando host.docker.internal para conectar al PostgreSQL local.")
 
     return create_engine(url, echo=False)
 
