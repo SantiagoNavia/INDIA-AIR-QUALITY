@@ -92,9 +92,7 @@ def generar_evidencias() -> None:
     evid_dir.mkdir(parents=True, exist_ok=True)
     ahora_utc = datetime.now(timezone.utc).isoformat(timespec="seconds")
 
-    # -----------------------------------------------------------------
     # P1: Estructura del DAG, 5 tareas y dependencias paralelas
-    # -----------------------------------------------------------------
     cfg_dag = dag_mod.DAG_CONFIG
     p1_md = f"""# Evidencia P1 — Estructura del DAG y Grafo de Dependencias
 
@@ -135,9 +133,7 @@ flowchart LR
         with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmp_str:
             tmp_dir, _ = _preparar_entorno_ensayo(Path(tmp_str))
 
-            # -----------------------------------------------------------------
             # P2: Ejecucion manual completa que genera gold_final.csv validado
-            # -----------------------------------------------------------------
             def _correr_p2():
                 tag = "manual__2026-11-04T02_30_00_00_00"
                 m_api = pipeline_tasks.run_extract_api_bronze(run_tag=tag, proyecto_dir=tmp_dir)
@@ -162,9 +158,7 @@ flowchart LR
             )
             (evid_dir / "P2_ejecucion_completa_gold_final.txt").write_text(p2_txt, encoding="utf-8")
 
-            # -----------------------------------------------------------------
             # P3: Configuracion horaria 0 * * * * y zonas horarias
-            # -----------------------------------------------------------------
             p3_md = f"""# Evidencia P3 — Planificación Horaria (`0 * * * *`) y Zonas Horarias
 
 - **Expresión Cron configurada en el DAG:** `schedule="0 * * * *"` (minuto `0` de cada hora: `00:00, 01:00, 02:00, ..., 23:00 UTC`).
@@ -177,9 +171,7 @@ flowchart LR
 """
             (evid_dir / "P3_configuracion_horaria_cron.md").write_text(p3_md, encoding="utf-8")
 
-            # -----------------------------------------------------------------
             # P4: Fallo inducido, registro del error y recuperacion en reintento
-            # -----------------------------------------------------------------
             flag_p4 = tmp_dir / "data/bronze/SIMULAR_FALLO_UNA_VEZ.flag"
             flag_p4.write_text("simular_fallo_transitorio_503", encoding="utf-8")
 
@@ -220,9 +212,7 @@ flowchart LR
             )
             (evid_dir / "P4_fallo_inducido_y_recuperacion.txt").write_text(p4_txt, encoding="utf-8")
 
-            # -----------------------------------------------------------------
             # P5: Re-ejecucion idempotente (conteo e indicadores antes vs despues)
-            # -----------------------------------------------------------------
             df_antes = pd.read_csv(tmp_dir / "data/gold/gold_final.csv")
             kpi_antes = pd.read_csv(tmp_dir / "data/gold/tabla_kpi_resumen.csv")
 
@@ -336,36 +326,6 @@ flowchart LR
     finally:
         extract_api._consultar = consultar_orig
         os.chdir(RAIZ)
-
-    # -----------------------------------------------------------------
-    # Guia rapida para guardar las 5 capturas de pantalla de Airflow UI
-    # -----------------------------------------------------------------
-    guia_ui = """# Guía Rápida para Capturas Visuales en Apache Airflow (`http://localhost:8080`)
-
-Esta carpeta ya incluye los registros técnicos y comparaciones cuantitativas verificables (`P1` a `P5`). Si deseas acompañar tu entrega con capturas visuales de la interfaz web de Airflow (`http://localhost:8080`), toma estas 5 capturas y guárdalas aquí mismo:
-
-1. **`P1_grafo_dag.png` (Vista Graph del DAG `etl_green_data_hourly`):**
-   - Abre `http://localhost:8080` $\\rightarrow$ haz clic en **`etl_green_data_hourly`** $\\rightarrow$ pestaña **Graph**.
-   - Se verán `extract_api_bronze` y `extract_excel_bronze` en paralelo convergiendo en `transform_silver` $\\rightarrow$ `build_gold` $\\rightarrow$ `validate_gold` (5 tareas, 0 errores de importación).
-
-2. **`P2_ejecucion_manual_verde.png` (Ejecución manual completa):**
-   - Haz clic en **Trigger DAG** (botón Play arriba a la derecha).
-   - Cuando las 5 cajas estén en verde (`success`), haz clic en `validate_gold` $\\rightarrow$ pestaña **Logs** para mostrar `[VALIDATE GOLD OK] data/gold/gold_final.csv validado`.
-
-3. **`P3_corrida_automatica_horaria.png` (Disparo automático `0 * * * *`):**
-   - Deja el interruptor del DAG activado (**Unpaused**). Al llegar el minuto `:00` de la siguiente hora, Airflow lanzará solo una corrida `scheduled__...`. Toma captura de la lista **Runs** mostrando el `Schedule: 0 * * * *` y la corrida `scheduled` en verde.
-
-4. **`P4_fallo_inducido_reintento.png` (Fallo inducido y recuperación automática):**
-   - En PowerShell (dentro de la carpeta `medallon/`), crea el archivo bandera de un solo uso:
-     ```powershell
-     New-Item -Path "data/bronze/SIMULAR_FALLO_UNA_VEZ.flag" -ItemType File -Force
-     ```
-   - Dispara el DAG (**Trigger DAG**). Verás que el **Intento 1** de `extract_api_bronze` falla con `[FALLO INDUCIDO P4]` y pasa a color amarillo (`up_for_retry`), bloqueando `transform_silver`.
-   - Tras 5 minutos (`retry_delay`), el **Intento 2** correrá solo, ya no encontrará el flag y terminará todo el DAG en verde (`success`). Toma captura del log del Intento 1 y del estado final recuperado.
-
-5. **`P5_reejecucion_sin_duplicados.png` (Idempotencia):**
-   - Vuelve a presionar **Trigger DAG** una segunda vez seguida y muestra en los logs de `build_gold` / `validate_gold` que el conteo total de filas (`2,289` filas, `0` duplicados) permanece exacto antes y después, tal como documenta `P5_reejecucion_idempotencia.md`.
-"""
     (evid_dir / "GUIA_CAPTURAS_AIRFLOW_UI.md").write_text(guia_ui, encoding="utf-8")
     print(f"[OK] Evidencias P1-P5 generadas en: {evid_dir}")
 

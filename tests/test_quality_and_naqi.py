@@ -20,9 +20,7 @@ from src.transform.naqi_india import (
 from test_clean_api import crudo_desde_respuestas
 
 
-# ================================================================
 # FASE 5: Indice NAQI de India (CPCB)
-# ================================================================
 class TestNaqiIndia:
     @pytest.mark.parametrize("conc,cont,esperado", [
         (0.0, "pm2_5", 0.0),
@@ -79,9 +77,7 @@ class TestNaqiIndia:
         assert res.loc[2, "categoria"] == "Sin dato"
 
 
-# ================================================================
 # FASE 4: Controles de Calidad de la Integracion y Coordenadas Compartidas
-# ================================================================
 @pytest.fixture
 def capas(bronze_excel):
     sensores = limpiar_aire_india(bronze_excel)

@@ -108,10 +108,8 @@ def construir_gold(config: dict, df_sensores, df_aire, resumen: dict, log: loggi
 def pipeline_completo(config: dict, resumen: dict, log: logging.Logger) -> None:
     rutas = config["path"]
 
-    # ============================================================
     # 01 - EXTRACCION / BRONZE
     # Leer el Excel y consumir la API. Datos originales sin modificar.
-    # ============================================================
     _etapa(log, "ETAPA 01 - EXTRACCION / BRONZE (Datos crudos)")
     t0 = time.perf_counter()
 

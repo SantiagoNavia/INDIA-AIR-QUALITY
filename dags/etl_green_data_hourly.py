@@ -66,9 +66,7 @@ def _obtener_run_id_actual() -> str | None:
         return None
 
 
-
 # Wrappers ligeros invocables tanto por Airflow como por pytest
-
 def tarea_extract_api_bronze(run_tag: str | None = None) -> dict:
     return pipeline_tasks.run_extract_api_bronze(
         run_tag=run_tag or _obtener_run_id_actual(),
@@ -105,9 +103,7 @@ def tarea_validate_gold(gold_meta: dict | None = None) -> dict:
     )
 
 
-
 # Definicion declarativa del DAG (TaskFlow API `@dag` y `@task`)
-
 DEFAULT_ARGS = {
     "owner": "santiago_navia",
     "depends_on_past": False,

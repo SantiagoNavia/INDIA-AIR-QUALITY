@@ -54,9 +54,7 @@ def _preparar_contexto(
     return raiz, cargar_config(config_path)
 
 
-# =====================================================================
 # 1. Actividad 1: Extraccion desde API REST hacia Bronze
-# =====================================================================
 def run_extract_api_bronze(
     run_tag: str | None = None,
     config_path: str = "config/config.yaml",
@@ -115,9 +113,7 @@ def run_extract_api_bronze(
     return meta
 
 
-# =====================================================================
 # 2. Actividad 2: Extraccion desde fuente Excel hacia Bronze
-# =====================================================================
 def run_extract_excel_bronze(
     run_tag: str | None = None,
     config_path: str = "config/config.yaml",
@@ -145,9 +141,7 @@ def run_extract_excel_bronze(
     return meta
 
 
-# =====================================================================
 # 3. Actividad 3: Transformacion y limpieza en capa Silver
-# =====================================================================
 def run_transform_silver(
     api_meta: dict | None = None,
     excel_meta: dict | None = None,
@@ -220,9 +214,7 @@ def run_transform_silver(
     }
 
 
-# =====================================================================
 # 4. Actividad 4: Construccion de capa Gold e indicadores KPI
-# =====================================================================
 def run_build_gold(
     silver_meta: dict | None = None,
     config_path: str = "config/config.yaml",
@@ -313,9 +305,7 @@ def run_build_gold(
     return resumen_gold
 
 
-# =====================================================================
 # 5. Actividad 5: Validacion automatica de la salida Gold
-# =====================================================================
 def run_validate_gold(
     gold_meta: dict | None = None,
     config_path: str = "config/config.yaml",
