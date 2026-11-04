@@ -1,7 +1,7 @@
 {
   "orquestador": "Apache Airflow (etl_green_data_hourly)",
   "estado": "OK",
-  "validado_utc": "2026-11-04T06:00:54+00:00",
+  "validado_utc": "2026-11-04T07:01:39+00:00",
   "gold_final": {
     "archivo_gold_verificado": "data/gold/gold_final.csv",
     "filas_gold": 3052,
