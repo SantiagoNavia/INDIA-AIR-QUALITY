@@ -1,0 +1,107 @@
+========================================================================
+EVIDENCIA P4 - FALLO INDUCIDO, LOG DEL ERROR Y RECUPERACION AUTOMATICA
+========================================================================
+Mecanismo: archivo bandera de un solo uso `data/bronze/SIMULAR_FALLO_UNA_VEZ.flag`.
+Efecto en el grafo: al fallar `extract_api_bronze` en el Intento 1, `transform_silver`
+NO se ejecuta (`trigger_rule='all_success'`) evitando procesar datos incompletos.
+Politica del DAG: `retries=2`, `retry_delay=timedelta(minutes=5)`.
+
+--- [INTENTO 1 / 3] FALLO INDUCIDO EN extract_api_bronze ---
+2026-11-03 22:31:26,584 | INFO    | src.extract.extract_api | Estaciones: 763 | puntos de consulta unicos: 460 | estaciones que comparten punto: 427 (max 23 por punto)
+2026-11-03 22:31:26,585 | ERROR   | src.extract.extract_api | [FALLO INDUCIDO P4] API REST Open-Meteo temporalmente inaccesible (HTTP 503 simulado). Flag de un solo uso consumido: el proximo reintento automatico se recuperara.
+
+Traceback capturado en el log de la tarea:
+Traceback (most recent call last):
+  File "C:\Users\ns645\OneDrive\Documentos\PARCIAL 2ndo corte\medallon\scripts\generar_evidencias_p1_p5.py", line 188, in _correr_intento_1_fallido
+    pipeline_tasks.run_extract_api_bronze(run_tag="run_p4_retry", proyecto_dir=tmp_dir)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ns645\OneDrive\Documentos\PARCIAL 2ndo corte\medallon\src\pipeline_tasks.py", line 89, in run_extract_api_bronze
+    df_bronze_aire = extract_api.extraer_api_india(
+        fuente_api,
+    ...<3 lines>...
+        run_tag=tag,
+    )
+  File "C:\Users\ns645\OneDrive\Documentos\PARCIAL 2ndo corte\medallon\src\extract\extract_api.py", line 131, in extraer_api_india
+    _verificar_fallo_inducido_api(dir_bronze)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "C:\Users\ns645\OneDrive\Documentos\PARCIAL 2ndo corte\medallon\src\extract\extract_api.py", line 83, in _verificar_fallo_inducido_api
+    raise RuntimeError(msg)
+RuntimeError: [FALLO INDUCIDO P4] API REST Open-Meteo temporalmente inaccesible (HTTP 503 simulado). Flag de un solo uso consumido: el proximo reintento automatico se recuperara.
+
+--- [INTENTO 2 / 3] REINTENTO AUTOMATICO Y RECUPERACION COMPLETA ---
+2026-11-03 22:31:26,975 | INFO    | src.extract.extract_api | Estaciones: 763 | puntos de consulta unicos: 460 | estaciones que comparten punto: 427 (max 23 por punto)
+2026-11-03 22:31:26,976 | INFO    | src.extract.extract_api | [BRONZE - API REST] Hora UTC: 2026-11-04T03:31:26+00:00 | Procedencia: https://air-quality-api.open-meteo.com/v1/air-quality
+2026-11-03 22:31:26,976 | INFO    | src.extract.extract_api | Estaciones objetivo: 763 -> coordenadas unicas a consultar: 460
+2026-11-03 22:31:26,976 | INFO    | src.extract.extract_api | Peticiones programadas: 10 lotes de hasta 50 coordenadas
+2026-11-03 22:31:27,000 | INFO    | src.extract.extract_api | Lote 1/10: 50 coordenadas OK
+2026-11-03 22:31:27,025 | INFO    | src.extract.extract_api | Lote 2/10: 50 coordenadas OK
+2026-11-03 22:31:27,048 | INFO    | src.extract.extract_api | Lote 3/10: 50 coordenadas OK
+2026-11-03 22:31:27,072 | INFO    | src.extract.extract_api | Lote 4/10: 50 coordenadas OK
+2026-11-03 22:31:27,096 | INFO    | src.extract.extract_api | Lote 5/10: 50 coordenadas OK
+2026-11-03 22:31:27,124 | INFO    | src.extract.extract_api | Lote 6/10: 50 coordenadas OK
+2026-11-03 22:31:27,147 | INFO    | src.extract.extract_api | Lote 7/10: 50 coordenadas OK
+2026-11-03 22:31:27,169 | INFO    | src.extract.extract_api | Lote 8/10: 50 coordenadas OK
+2026-11-03 22:31:27,191 | INFO    | src.extract.extract_api | Lote 9/10: 50 coordenadas OK
+2026-11-03 22:31:27,195 | INFO    | src.extract.extract_api | Lote 10/10: 10 coordenadas OK
+2026-11-03 22:31:27,260 | INFO    | src.extract.extract_api | Respuestas originales guardadas en Bronze: data/bronze/bronze_aire_india_api.json
+2026-11-03 22:31:27,326 | INFO    | src.extract.extract_api | Snapshot original por corrida guardado en: data/bronze/runs\run_p4_retry\bronze_aire_india_api.json
+2026-11-03 22:31:27,340 | INFO    | src.extract.extract_api | Serie horaria cruda: 11,040 filas (2026-11-02 00:00:00 a 2026-11-02 23:00:00)
+2026-11-03 22:31:27,343 | INFO    | src.pipeline_tasks | [EXTRACT_API_BRONZE OK] Corrida=run_p4_retry | Fuente=https://air-quality-api.open-meteo.com/v1/air-quality | Puntos=460 | Registros extraidos=11040
+2026-11-03 22:31:27,347 | INFO    | src.extract.extract_excel | [BRONZE - EXCEL] Hora UTC: 2026-11-04T03:31:27+00:00 | Procedencia: data/bronze/AIR_QUALITY_INDIA_DATASET.xlsx
+2026-11-03 22:31:27,745 | INFO    | src.extract.extract_excel | [BRONZE - EXCEL] Registros crudos: 9,627 filas | Columnas: 12 | Estaciones: 764 | SHA-256 (version): 0edf29343c2e9f7a...
+2026-11-03 22:31:27,769 | INFO    | src.extract.extract_excel | [BRONZE - EXCEL] Copia inalterada por corrida guardada en: data/bronze/runs\run_p4_retry\AIR_QUALITY_INDIA_DATASET.xlsx
+2026-11-03 22:31:27,769 | INFO    | src.pipeline_tasks | [EXTRACT_EXCEL_BRONZE OK] Corrida=run_p4_retry | Fuente=data/bronze/AIR_QUALITY_INDIA_DATASET.xlsx | Filas leidas=9627 | SHA-256=0edf29343c2e9f7a...
+2026-11-03 22:31:27,772 | INFO    | src.extract.extract_excel | [BRONZE - EXCEL] Hora UTC: 2026-11-04T03:31:27+00:00 | Procedencia: data/bronze/runs\run_p4_retry\AIR_QUALITY_INDIA_DATASET.xlsx
+2026-11-03 22:31:28,160 | INFO    | src.extract.extract_excel | [BRONZE - EXCEL] Registros crudos: 9,627 filas | Columnas: 12 | Estaciones: 764 | SHA-256 (version): 0edf29343c2e9f7a...
+2026-11-03 22:31:28,160 | INFO    | src.transform.clean_excel | [SILVER - INDIA] Iniciando transformacion y limpieza de calidad del aire en India
+2026-11-03 22:31:28,166 | INFO    | src.transform.clean_excel | Filtrado de variables: 9,627 filas crudas -> 7,233 registros de calidad del aire.
+2026-11-03 22:31:28,166 | INFO    | src.transform.clean_excel | (Se eliminaron 2,394 filas de variables climaticas: temperatura, humedad, viento, etc.)
+2026-11-03 22:31:28,167 | INFO    | src.transform.clean_excel | Duplicados eliminados por sensor_id: 0
+2026-11-03 22:31:28,174 | INFO    | src.transform.clean_excel | Tratamiento de nulos: 11 sensores sin fecha tratados (dias_monitoreo=0.0, flag tiene_historial_fechas=False).
+2026-11-03 22:31:28,174 | INFO    | src.transform.clean_excel | Resumen Silver India: 7,233 sensores de aire | 763 estaciones | contaminantes: ['carbon_monoxide', 'nitrogen_dioxide', 'nitrogen_monoxide', 'nitrogen_oxides', 'ozone', 'pm1', 'pm10', 'pm2_5', 'sulfur_dioxide']
+2026-11-03 22:31:28,236 | INFO    | src.utils.io | Archivo guardado: data/silver/silver_aire_india_sensores.csv (7,233 filas)
+2026-11-03 22:31:28,236 | INFO    | src.pipeline_tasks | [TRANSFORM_SILVER - EXCEL] Entrada=9627 | Salida=7233 | Descartes=2394
+2026-11-03 22:31:28,539 | INFO    | src.extract.extract_api | Estaciones: 763 | puntos de consulta unicos: 460 | estaciones que comparten punto: 427 (max 23 por punto)
+2026-11-03 22:31:28,541 | INFO    | src.transform.clean_api | [SILVER - INDIA API] Limpieza de valores de calidad del aire
+2026-11-03 22:31:28,543 | INFO    | src.transform.clean_api | Filas crudas: 11,040 -> sin duplicados ni fechas vacias: 11,040
+2026-11-03 22:31:28,550 | INFO    | src.transform.clean_api | Estaciones con datos de la API: 763 (sin datos: 0)
+2026-11-03 22:31:28,721 | INFO    | src.transform.clean_api | Valores negativos anulados: 0
+2026-11-03 22:31:28,721 | INFO    | src.transform.clean_api | Nulos: 0 antes de interpolar -> 0 despues
+2026-11-03 22:31:28,743 | INFO    | src.transform.clean_api | Resultado: 18,312 filas (763 estaciones x 24 horas)
+2026-11-03 22:31:30,115 | INFO    | src.utils.io | [INCREMENTAL] data/silver/silver_aire_india_horario.csv: 36,672 filas previas conservadas + 18,312 nuevas/actualizadas = 54,984
+2026-11-03 22:31:30,507 | INFO    | src.utils.io | Archivo guardado: data/silver/silver_aire_india_horario.csv (54,984 filas)
+2026-11-03 22:31:30,507 | INFO    | src.pipeline_tasks | [TRANSFORM_SILVER - API+JOIN] Entrada celdas-hora=11040 | Descartes=0 | Salida estacion-hora (lote)=18312 | Acumulado=54984
+2026-11-03 22:31:30,640 | INFO    | src.transform.gold_india | [GOLD - INDIA] Indicadores por estacion (Excel + API: EAQI europeo + NAQI India)
+2026-11-03 22:31:30,945 | INFO    | src.transform.gold_india | Filas estacion-fecha: 2289 | con API: 2289 | sin API: 0 | estaciones en celda compartida: 427
+2026-11-03 22:31:30,945 | INFO    | src.transform.gold_india | Categoria predominante EAQI (Europeo) del lote actual:
+2026-11-03 22:31:30,945 | INFO    | src.transform.gold_india |   - Moderado              :  918 filas estacion-fecha
+2026-11-03 22:31:30,945 | INFO    | src.transform.gold_india |   - Pobre                 :  707 filas estacion-fecha
+2026-11-03 22:31:30,945 | INFO    | src.transform.gold_india |   - Muy pobre             :  331 filas estacion-fecha
+2026-11-03 22:31:30,945 | INFO    | src.transform.gold_india |   - Bueno                 :  225 filas estacion-fecha
+2026-11-03 22:31:30,945 | INFO    | src.transform.gold_india |   - Extremadamente pobre  :  107 filas estacion-fecha
+2026-11-03 22:31:30,945 | INFO    | src.transform.gold_india |   - Muy bueno             :    1 filas estacion-fecha
+2026-11-03 22:31:30,945 | INFO    | src.transform.gold_india | Categoria NAQI (India CPCB) del lote actual:
+2026-11-03 22:31:30,946 | INFO    | src.transform.gold_india |   - Satisfactorio         : 1003 filas estacion-fecha
+2026-11-03 22:31:30,946 | INFO    | src.transform.gold_india |   - Moderado              :  989 filas estacion-fecha
+2026-11-03 22:31:30,946 | INFO    | src.transform.gold_india |   - Pobre                 :  183 filas estacion-fecha
+2026-11-03 22:31:30,946 | INFO    | src.transform.gold_india |   - Muy pobre             :   69 filas estacion-fecha
+2026-11-03 22:31:30,946 | INFO    | src.transform.gold_india |   - Bueno                 :   42 filas estacion-fecha
+2026-11-03 22:31:30,946 | INFO    | src.transform.gold_india |   - Severo                :    3 filas estacion-fecha
+2026-11-03 22:31:30,946 | INFO    | src.transform.gold_india | Top 5 estaciones con peor aire (lote actual):
+2026-11-03 22:31:30,948 | INFO    | src.transform.gold_india |   Urban Estate-II, Hisar - HSPCB             2026-10-14 EAQI  213.6 | NAQI 500.0 | PM2.5  119.1
+2026-11-03 22:31:30,948 | INFO    | src.transform.gold_india |   Mindspace-Malad West, Mumbai - MPCB        2026-10-15 EAQI  184.4 | NAQI 307.8 | PM2.5   62.9
+2026-11-03 22:31:30,948 | INFO    | src.transform.gold_india |   Byculla, Mumbai - BMC                      2026-10-15 EAQI  184.4 | NAQI 307.8 | PM2.5   62.9
+2026-11-03 22:31:30,948 | INFO    | src.transform.gold_india |   Sewri, Mumbai - BMC                        2026-10-15 EAQI  184.4 | NAQI 307.8 | PM2.5   62.9
+2026-11-03 22:31:30,948 | INFO    | src.transform.gold_india |   Shivaji Nagar, Mumbai - BMC                2026-10-15 EAQI  184.4 | NAQI 307.8 | PM2.5   62.9
+2026-11-03 22:31:31,038 | INFO    | src.utils.io | [INCREMENTAL] data/gold/gold_final.csv: 0 filas previas conservadas + 2,289 nuevas/actualizadas = 2,289
+2026-11-03 22:31:31,086 | INFO    | src.utils.io | Archivo guardado: data/gold/gold_final.csv (2,289 filas)
+2026-11-03 22:31:31,126 | INFO    | src.utils.io | Archivo guardado: data/gold/gold_aire_india.csv (2,289 filas)
+2026-11-03 22:31:31,154 | INFO    | src.utils.io | Archivo guardado: data/gold/reporte_coordenadas_compartidas.csv (460 filas)
+2026-11-03 22:31:31,157 | INFO    | src.utils.io | Archivo guardado: data/gold/tabla_kpi_resumen.csv (5 filas)
+2026-11-03 22:31:31,157 | INFO    | src.pipeline_tasks | [BUILD_GOLD OK] Archivo=data/gold/gold_final.csv | Filas=2289 | EAQI medio=69.62 | NAQI India medio=125.76 | Excedencia OMS PM2.5=88.69%
+2026-11-03 22:31:31,201 | INFO    | src.quality.checks | [VALIDATE GOLD OK] data/gold/gold_final.csv validado: 2289 filas, 763 estaciones, 0 duplicados, KPIs consistentes.
+2026-11-03 22:31:31,312 | INFO    | src.quality.checks | [CALIDAD] Ejecutando controles de calidad e integracion...
+2026-11-03 22:31:31,320 | INFO    | src.quality.checks | [CALIDAD OK] Cobertura JOIN: 100.0% (763/763) | Puntos unicos: 460 | Compartidas: 427 est. | Dist. media al modelo: 4.19 km (max 7.56 km) | Activas ultimo año: 629/763
+2026-11-03 22:31:31,321 | INFO    | src.pipeline_tasks | [VALIDATE_GOLD OK] Todas las verificaciones de calidad y KPIs superadas sin errores.
+
+Estado final tras recuperacion: OK | Filas Gold validadas: 2289

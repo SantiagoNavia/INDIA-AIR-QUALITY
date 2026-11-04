@@ -28,7 +28,9 @@ import src.transform.clean_api   as transform_aire
 import src.transform.gold_india as gold_india
 from src.quality.checks import (
     generar_reporte_coordenadas_compartidas,
+    generar_tabla_kpi,
     validar_calidad_pipeline,
+    validar_gold_final,
 )
 
 # 04 - Carga a Data Warehouse (PostgreSQL)
@@ -56,6 +58,9 @@ def construir_gold(config: dict, df_sensores, df_aire, resumen: dict, log: loggi
     dias_vigencia = cfg_calidad.get("dias_vigencia_estacion", 365)
 
     ruta_gold = rutas["gold_aire_india_dir"]
+    dir_gold_base = os.path.dirname(ruta_gold) or "data/gold"
+    ruta_gold_final = rutas.get("gold_final_dir") or os.path.join(dir_gold_base, "gold_final.csv")
+
     df_gold_nuevo = gold_india.generar_gold_india(
         df_sensores, df_aire, decimales_coord=decimales, dias_vigencia_estacion=dias_vigencia
     )
@@ -63,13 +68,20 @@ def construir_gold(config: dict, df_sensores, df_aire, resumen: dict, log: loggi
     df_gold, previas = io.upsert_csv(df_gold_nuevo, ruta_gold, ["location_id", "fecha_lectura"])
     df_gold = gold_india.calcular_ranking(df_gold)
     io.guardar_csv(df_gold, ruta_gold)
+    if os.path.normpath(ruta_gold_final) != os.path.normpath(ruta_gold):
+        io.guardar_csv(df_gold, ruta_gold_final)
 
-    # Reporte de coordenadas compartidas y controles de calidad de la integracion
-    ruta_reporte = rutas.get(
-        "reporte_coordenadas_compartidas_dir", "data/gold/reporte_coordenadas_compartidas.csv"
+    # Reporte de coordenadas compartidas, tabla oficial de KPIs y controles de calidad
+    ruta_reporte = rutas.get("reporte_coordenadas_compartidas_dir") or os.path.join(
+        dir_gold_base, "reporte_coordenadas_compartidas.csv"
     )
     df_reporte_coords = generar_reporte_coordenadas_compartidas(df_sensores, df_aire, decimales=decimales)
     io.guardar_csv(df_reporte_coords, ruta_reporte)
+
+    ruta_kpi = rutas.get("tabla_kpi_dir") or os.path.join(dir_gold_base, "tabla_kpi_resumen.csv")
+    io.guardar_csv(generar_tabla_kpi(df_gold), ruta_kpi)
+
+    validar_gold_final(ruta_gold_final)
 
     metricas_calidad = validar_calidad_pipeline(
         df_sensores,
@@ -228,7 +240,9 @@ def main(argv=None):
         "bronze_api_india_json",
         "silver_sensores_india_dir",
         "silver_aire_india_horario_dir",
+        "gold_final_dir",
         "gold_aire_india_dir",
+        "tabla_kpi_dir",
         "reporte_coordenadas_compartidas_dir",
     ]:
         ruta = config["path"].get(clave)

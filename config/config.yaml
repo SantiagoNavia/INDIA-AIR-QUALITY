@@ -1,54 +1,59 @@
-
-# CONFIGURACIÓN DEL PIPELINE ETL 
-#REALIZADO POR: Santiago Navia Soto
-# Calidad del Aire en India
+# CONFIGURACIÓN DEL PIPELINE ETL - ARQUITECTURA MEDALLION + APACHE AIRFLOW
+# REALIZADO POR: Santiago Navia Soto
+# Calidad del Aire en India (Green Data)
 # Excel: catálogo de estaciones/sensores (dónde y qué se mide)
-# API: valores de calidad del aire en las coordenadas de esas estaciones
-
+# API: valores modelados horarios de calidad del aire en las coordenadas de esas estaciones
 
 project:
-  name: "Pipeline ETL Calidad del Aire - India"
-  version: "3.1"
-  description: "Excel de estaciones de India complementado con valores de calidad del aire desde una API REST (sin datos climáticos)"
+  name: "Pipeline ETL Calidad del Aire - India (Medallion + Airflow)"
+  version: "4.0"
+  description: "ETL Medallion orquestado cada hora en Apache Airflow: Excel de estaciones + API REST Open-Meteo"
   author: "Santiago Navia Soto"
   license: "MIT"
-  date: "2026-10-30"
+  date: "2026-11-03"
+  scheduler_timezone: "UTC"
+  data_timezone: "Asia/Kolkata"
 
 logging:
-  archivo: logs/log.txt            # registro de cada ejecucion (se agrega al final)
-  resumen_ejecucion: logs/run_summary.json   # metricas de la ultima ejecucion
+  archivo: logs/log.txt                      # registro historico de cada ejecucion (modo append)
+  resumen_ejecucion: logs/run_summary.json   # metricas verificables de la ultima corrida
   nivel: INFO
 
 path:
   data_dir: data
   bronze_dir: data/bronze
+  bronze_runs_dir: data/bronze/runs          # copias originales inalteradas por corrida horaria
   silver_dir: data/silver
   gold_dir: data/gold
+  evidencias_dir: evidencias
 
-  # Capa Bronze (datos crudos sin modificar) 
+  # Capa Bronze (datos crudos sin modificar)
   bronze_excel_india: data/bronze/AIR_QUALITY_INDIA_DATASET.xlsx
   bronze_api_india_json: data/bronze/bronze_aire_india_api.json
 
-  # Capa Silver (datos limpios, tipados y filtrados) 
+  # Capa Silver (datos limpios, tipados e integrados)
   silver_sensores_india_dir: data/silver/silver_aire_india_sensores.csv      # Excel: un sensor por fila
-  silver_aire_india_horario_dir: data/silver/silver_aire_india_horario.csv   # API: una estación por hora
+  silver_aire_india_horario_dir: data/silver/silver_aire_india_horario.csv   # API + JOIN: una estación por hora
 
-  # Capa Gold (indicadores por estación: Excel + API) 
-  gold_aire_india_dir: data/gold/gold_aire_india.csv
+  # Capa Gold (indicadores consolidados por estación y fecha)
+  gold_final_dir: data/gold/gold_final.csv                                   # salida oficial requerida por el laboratorio
+  gold_aire_india_dir: data/gold/gold_aire_india.csv                         # alias compatible con EDA y PostgreSQL
   reporte_coordenadas_compartidas_dir: data/gold/reporte_coordenadas_compartidas.csv
+  tabla_kpi_dir: data/gold/tabla_kpi_resumen.csv
 
-quality:
-  umbral_cobertura_join: 0.95       # minimo 95% de estaciones del catalogo con respuesta de API
-  distancia_alerta_km: 15.0         # umbral de distancia (km) estacion <-> punto de rejilla CAMS
-  dias_vigencia_estacion: 365       # dias desde ultima medicion para considerar activa una estacion
-
-  #Rutas del proyecto 
+  # Rutas del proyecto
   logs_dir: logs
   notebooks_dir: notebooks
   scripts_dir: src
   extract_dir: src/extract
   transform_dir: src/transform
   load_dir: src/load
+
+quality:
+  umbral_cobertura_join: 0.95       # minimo 95% de estaciones del catalogo con respuesta de API
+  distancia_alerta_km: 15.0         # umbral de distancia (km) estacion <-> punto de rejilla CAMS
+  dias_vigencia_estacion: 365       # dias desde ultima medicion para considerar activa una estacion
+  max_snapshots_bronze: 48          # conservar hasta las ultimas 48 corridas horarias en data/bronze/runs
 
 sources:
   aire_india_excel:
@@ -70,7 +75,7 @@ sources:
     decimales_coordenadas: 1    # 0.1 grados ~ resolución del modelo; evita consultas repetidas
     params:
       timezone: "Asia/Kolkata"
-      past_days: 0              # 0 = datos de hoy
+      past_days: 0              # 0 = datos del día en curso
       forecast_days: 1
       # Solo contaminantes del aire
       hourly:

@@ -1,4 +1,4 @@
-# Proyecto ETL: Calidad del Aire en India (Arquitectura Medallion)
+# Proyecto ETL: Calidad del Aire en India (Arquitectura Medallion + Apache Airflow)
 
 **Autor:** Santiago Navia Soto
 
@@ -6,152 +6,132 @@
 
 ## 1. ¿De qué trata este proyecto?
 
-Este proyecto construye un pipeline **ETL (Extracción, Transformación y Carga)** que analiza la calidad del aire en **763 estaciones de monitoreo de India** combinando dos fuentes de datos independientes:
+Este proyecto implementa un pipeline **ETL (Extracción, Transformación y Carga)** bajo la **Arquitectura Medallion (Bronze, Silver y Gold)**, automatizado cada hora con **Apache Airflow**, para analizar la calidad del aire en **763 estaciones de monitoreo de India** combinando dos fuentes independientes:
 
-1. **Un archivo Excel (`AIR_QUALITY_INDIA_DATASET.xlsx`):** contiene el directorio de estaciones físicas en India (dónde están ubicadas y qué sensores tienen instalados).
-2. **La API REST de Open-Meteo:** entrega los niveles horarios de contaminación del aire (`PM2.5`, `PM10`, `NO2`, `SO2`, `CO`, `O3` e índice `AQI`) en las coordenadas de esas estaciones.
+1. **Archivo Excel (`AIR_QUALITY_INDIA_DATASET.xlsx`):** catálogo de estaciones físicas en India (ubicación, sensores instalados y fechas de operación).
+2. **API REST de Open-Meteo (modelo Copernicus CAMS):** niveles horarios de contaminación del aire (`PM2.5`, `PM10`, `NO2`, `SO2`, `CO`, `O3` e índice `EAQI`) en las coordenadas de esas estaciones.
 
 ---
 
 ## 2. ¿Cómo funciona la Arquitectura Medallion?
 
-Los datos pasan por tres capas organizadas de menor a mayor calidad:
+Los datos avanzan por tres capas de menor a mayor calidad:
 
 * **Capa Bronze (Datos Crudos):**
-  Guarda los datos tal como vienen de la fuente original, sin modificarlos: el Excel original y el archivo `bronze_aire_india_api.json` con las respuestas de la API.
-* **Capa Silver (Datos Limpios):**
-  * **Sensores (`silver_aire_india_sensores.csv`):** filtra únicamente sensores de calidad del aire (descarta variables de clima como temperatura o humedad), corrige unidades dañadas (`ug/m3`), elimina sensores duplicados y calcula cuántos días ha operado cada sensor.
-  * **Horario (`silver_aire_india_horario.csv`):** limpia los datos horarios de la API, elimina valores negativos imposibles, rellena huecos por interpolación temporal y une cada estación del Excel con su serie horaria.
-* **Capa Gold (Indicadores Finales):**
-  * **`gold_aire_india.csv`:** resume la información en **una fila por estación y día**, combinando la cobertura de sensores del Excel con los promedios/máximos diarios de contaminación, el índice europeo (**EAQI**), el índice oficial de India (**NAQI**) y los rankings de peor calidad del aire.
-  * **`reporte_coordenadas_compartidas.csv`:** tabla de control que muestra qué estaciones cercanas comparten el mismo punto de consulta en la API.
+  Guarda los datos originales sin alterarlos: el archivo Excel (verificando en cada corrida su huella digital `SHA-256`), el archivo `bronze_aire_india_api.json` con las respuestas crudas de la API y un respaldo histórico por corrida en `data/bronze/runs/<run_id>/`.
+* **Capa Silver (Datos Limpios e Integrados):**
+  * **Sensores (`silver_aire_india_sensores.csv`):** conserva únicamente sensores de contaminantes del aire (descarta variables de clima como temperatura o humedad), corrige unidades dañadas (`ug/m3`), elimina duplicados y calcula los días de operación.
+  * **Horario (`silver_aire_india_horario.csv`):** limpia la serie horaria de la API, anula valores negativos imposibles, interpola huecos temporales y une cada estación del Excel con su celda horaria.
+* **Capa Gold (Indicadores y KPIs Finales):**
+  * **`gold_final.csv`** *(y su copia compatible `gold_aire_india.csv`)*: resume **una fila por estación y día**, combinando la capacidad instalada de sensores con promedios/máximos diarios de contaminantes, el índice europeo (**EAQI**), el índice oficial de India (**NAQI - CPCB**) y los rankings diarios.
+  * **`tabla_kpi_resumen.csv`:** resumen ejecutivo de los **5 KPIs ambientales (Green Data)** con definición, fórmula, columnas y resultados.
+  * **`reporte_coordenadas_compartidas.csv`:** control de qué estaciones vecinas comparten la misma celda de consulta en la API.
 
 ---
 
-## 3. Estructura de Carpetas
+## 3. Automatización Horaria con Apache Airflow (Docker)
+
+Para que el proceso corra solo **cada hora en punto (`0 * * * *`)** sin intervención manual, el pipeline está orquestado en **Apache Airflow 3.3.2** mediante el DAG **[`dags/etl_green_data_hourly.py`](dags/etl_green_data_hourly.py)**.
+
+### Las 5 tareas del flujo en Airflow
+1. **`extract_api_bronze`** *(en paralelo)*: consulta la API REST de Open-Meteo por lotes y guarda el JSON crudo en Bronze.
+2. **`extract_excel_bronze`** *(en paralelo)*: lee el Excel de estaciones, verifica su versión (`SHA-256`) y respalda una copia intacta de la corrida.
+3. **`transform_silver`**: espera a que **ambas** extracciones terminen bien (si alguna falla, se detiene para no mezclar datos incompletos), limpia las tablas y actualiza la capa Silver.
+4. **`build_gold`**: construye `data/gold/gold_final.csv`, calcula los 5 KPIs ambientales y actualiza automáticamente **PostgreSQL (`DB_GOLD_INDIA`)** si detecta el archivo `.env`.
+5. **`validate_gold`**: revisa que `gold_final.csv` exista, tenga todas sus columnas, **0 filas duplicadas** y KPIs matemáticamente consistentes. Si algo falla, marca alerta en rojo.
+
+```mermaid
+flowchart LR
+    A["extract_api_bronze"] --> C["transform_silver"]
+    B["extract_excel_bronze"] --> C["transform_silver"]
+    C --> D["build_gold"]
+    D --> E["validate_gold"]
+```
+
+### Contenedores, puertos y cómo abrir Airflow en el navegador
+El entorno Docker Compose (ubicado en la carpeta `airflow-medallon`) levanta los servicios oficiales de Airflow (`airflow-apiserver`, `airflow-scheduler`, `airflow-dag-processor`, `airflow-worker`, `airflow-triggerer`, `postgres` interno de Airflow y `redis`) montando este proyecto en `/opt/airflow/medallon`:
+
+* **Interfaz Web de Airflow:** **[http://localhost:8080](http://localhost:8080)** (puerto `8080`, usuario/contraseña por defecto `airflow` / `airflow`).
+* **PostgreSQL Data Warehouse (Windows local):** puerto `5432`, base de datos `DB_GOLD_INDIA` (Airflow se conecta automáticamente usando `host.docker.internal:5432`).
+* **Zonas horarias:** el planificador de Airflow trabaja en **`UTC`** y los datos horarios de contaminación se piden en hora local de India (**`Asia/Kolkata`, UTC+05:30**).
+
+Comandos básicos desde la carpeta `airflow-medallon`:
+```powershell
+docker compose up -d      # Encender Apache Airflow
+docker compose ps         # Verificar que los contenedores estén saludables (healthy)
+docker compose down       # Apagar los contenedores cuando termines
+```
+Dentro de `http://localhost:8080`, busca el DAG **`etl_green_data_hourly`**, actívalo con el interruptor y presiona **Trigger DAG** (o deja que se ejecute solo cada hora al minuto `:00`).
+
+---
+
+## 4. Estructura de Carpetas del Proyecto
 
 ```text
 medallon/
-├── config/config.yaml          # Configuración de rutas, API y reglas de calidad
-├── dags/                       # DAG de Apache Airflow para automatizar el pipeline
+├── config/config.yaml                  # Parámetros de rutas, API, zonas horarias y umbrales de calidad
+├── dags/
+│   └── etl_green_data_hourly.py        # DAG declarativo de Apache Airflow (5 tareas, cron 0 * * * *)
 ├── data/
-│   ├── bronze/                 # Datos crudos (Excel + JSON de la API)
-│   ├── silver/                 # Datos limpios (sensores + serie horaria)
-│   └── gold/                   # Indicadores por estación y reporte de coordenadas
+│   ├── bronze/                         # Datos crudos (Excel + JSON API + snapshots por corrida)
+│   ├── silver/                         # Datos limpios (sensores + serie horaria integrada)
+│   └── gold/                           # gold_final.csv, tabla_kpi_resumen.csv y reporte de celdas
+├── evidencias/                         # Pruebas verificables P1 a P5 (estructura, cron, fallo y re-ejecución)
 ├── logs/
-│   ├── log.txt                 # Registro paso a paso de cada ejecución
-│   └── run_summary.json        # Resumen en JSON de la última corrida
-├── notebooks/notebook.ipynb    # Análisis exploratorio y gráficos (EDA)
-├── scripts/                    # Script para empaquetar la entrega en .zip
+│   ├── log.txt                         # Registro detallado paso a paso
+│   └── run_summary.json                # Métricas verificables de la última corrida
+├── notebooks/notebook.ipynb            # Análisis exploratorio y visualizaciones (EDA)
+├── scripts/
+│   ├── generar_evidencias_p1_p5.py     # Reproduce y verifica automáticamente las pruebas P1–P5
+│   └── empaquetar_entrega.ps1          # Empaqueta el proyecto limpio en .zip (sin venv ni .env)
 ├── src/
-│   ├── extract/                # Lectura del Excel y consumo de la API por lotes
-│   ├── transform/              # Limpieza Silver, cálculo de NAQI India y capa Gold
-│   ├── quality/                # Controles de calidad de los datos y del JOIN
-│   ├── load/                   # Carga de la capa Gold a PostgreSQL (Data Warehouse)
-│   └── utils/                  # Configuración, logs y guardado incremental de CSV
-├── tests/                      # Pruebas automatizadas con pytest
-├── main.py                     # Archivo principal para ejecutar todo el pipeline
-└── requirements.txt            # Librerías necesarias
+│   ├── extract/                        # Extracción Excel (con SHA-256) y API REST (con reintentos)
+│   ├── transform/                      # Limpieza Silver, cálculo NAQI India y armado de Gold
+│   ├── quality/                        # Validaciones de esquema, claves, cobertura y KPIs
+│   ├── load/                           # Carga idempotente (UPSERT) hacia PostgreSQL (DB_GOLD_INDIA)
+│   ├── utils/                          # Configuración YAML, logger y lectura/escritura incremental
+│   └── pipeline_tasks.py               # Funciones modulares invocadas por las 5 tareas del DAG
+├── tests/                              # Suite de 117 pruebas automatizadas con pytest
+├── INFORME_CORTO_LABORATORIO.md        # Informe técnico corto del laboratorio (2–4 páginas)
+├── main.py                             # Ejecución directa por consola (completa o --solo-gold)
+├── .env.example                        # Plantilla de variables de entorno (sin credenciales reales)
+└── requirements.txt                    # Dependencias Python del pipeline
 ```
 
 ---
 
-## 4. Cómo instalar y ejecutar el proyecto
+## 5. Instalación y Ejecución Local (sin Docker)
 
-### Paso 1: Instalar librerías
+### Paso 1: Crear entorno e instalar librerías
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 pip install -r requirements-dev.txt
 ```
-*(No se necesita ninguna clave o `API_KEY` porque la API de Open-Meteo es pública y gratuita).*
+*(No necesitas ninguna `API_KEY` para Open-Meteo porque es abierta y gratuita. Si deseas carga automática a PostgreSQL, copia `.env.example` a `.env` con los datos de tu base local).*
 
-### Paso 2: Ejecutar el pipeline
-* **Para correr todo el proceso completo (Bronze $\rightarrow$ Silver $\rightarrow$ Gold $\rightarrow$ Calidad $\rightarrow$ PostgreSQL):**
+### Paso 2: Ejecutar el pipeline manualmente si lo deseas
+* **Corrida completa (Bronze $\rightarrow$ Silver $\rightarrow$ Gold $\rightarrow$ Validación $\rightarrow$ PostgreSQL):**
   ```powershell
   python main.py
   ```
-* **Para regenerar Gold, controles de calidad y actualizar PostgreSQL desde los archivos Silver (rápido, sin consultar la API):**
+* **Regenerar únicamente Gold, KPIs y validación desde Silver (sin consultar internet):**
   ```powershell
   python main.py --solo-gold
   ```
-*(Nota: siempre que exista tu archivo `.env` en `medallon/`, el pipeline actualizará PostgreSQL automáticamente al final sin necesidad de escribir comandos adicionales).*
 
-Al terminar, puedes revisar el archivo `logs/log.txt` para ver todo lo que hizo el programa paso por paso.
-
-### Paso 3: Ejecutar las pruebas automatizadas
+### Paso 3: Ejecutar las pruebas automatizadas y evidencias
 ```powershell
-pytest
+pytest --cov=src --cov=main
+python scripts/generar_evidencias_p1_p5.py
 ```
-*(Si deseas ver el porcentaje de código cubierto por las pruebas: `pytest --cov=src --cov=main`).*
 
 ---
 
-## 5. Aspectos importantes sobre los datos
+## 6. Aspectos Clave de los Datos y PostgreSQL
 
-### A. Diferencia entre los datos de Open-Meteo y un sensor físico real
-* **El Excel** es un catálogo de estaciones reales en tierra, pero **no trae mediciones**, solo la ubicación y las fechas en que operó cada sensor.
-* **Open-Meteo** no lee el sensor físico de la calle: usa un **modelo atmosférico por computadora (Copernicus CAMS)** que divide el mapa en cuadros (celdas) de aproximadamente **11 km $\times$ 11 km ($0.1^\circ$)**.
-* **¿Qué significa esto?**
-  1. El valor de Open-Meteo es el **promedio estimado para un cuadro de 11 km**, mientras que un sensor real mide una esquina o avenida específica (donde un camión o fábrica cercana puede disparar el dato).
-  2. El modelo entrega datos todos los días aunque el sensor físico de esa estación lleve años apagado. Por eso en la capa Gold se agregó la columna `estacion_activa_reciente`, que indica si la estación tuvo actividad en el último año (**630 activas** y **133 inactivas**) y la columna `distancia_modelo_km` (distancia entre la estación y el punto del modelo, en promedio **4.19 km**).
-
-### B. ¿Por qué varias estaciones comparten coordenadas y empatan en el ranking?
-* Como el modelo de Open-Meteo cambia cada $0.1^\circ$ ($\sim 11\text{ km}$), las coordenadas se redondean a 1 decimal (`lat_consulta`, `lon_consulta`) para no pedirle a la API dos veces el mismo cuadro.
-* En ciudades grandes (como Delhi o Mumbai) hay muchas estaciones separadas por pocos kilómetros que caen dentro del **mismo cuadro de 11 km**.
-* En total:
-  * De las **763 estaciones**, se consultan **460 puntos únicos**.
-  * **427 estaciones** comparten su cuadro con al menos otra estación vecina.
-* Como reciben el mismo pronóstico del cuadro, **tienen el mismo AQI y empatan en el ranking por estación (`ranking_peor_aire`)**. Para distinguirlas están las columnas `id_punto_consulta`, `n_estaciones_mismo_punto`, `valor_compartido`, el ranking por cuadro único (`ranking_peor_aire_celda`) y el archivo `data/gold/reporte_coordenadas_compartidas.csv`.
-
-### C. Índice Europeo (EAQI) vs. Índice Oficial de India (NAQI)
-* La API de Open-Meteo entrega por defecto el índice europeo (`aqi_promedio_dia`), pensado para niveles de contaminación más bajos.
-* En este proyecto se calculó además el **índice oficial de India (`naqi_india_promedio_dia`, escala 0 a 500)** usando la fórmula del *Central Pollution Control Board (CPCB)* de India, junto con su categoría (`categoria_naqi_india`) y qué contaminante fue el más crítico del día (`contaminante_dominante_naqi`).
-
----
-
-## 6. Integración con PostgreSQL y pgAdmin (Data Warehouse)
-
-El módulo [`src/load/load_datawarehouse.py`](src/load/load_datawarehouse.py) toma la capa Gold y la sube de forma **idempotente** (UPSERT sobre `location_id` y `fecha_lectura`) a tu base de datos PostgreSQL (`DB_GOLD_INDIA`).
-
-En **pgAdmin**, al desplegar `DB_GOLD_INDIA` $\rightarrow$ `Schemas` $\rightarrow$ `public`, encontrarás:
-* **Tabla `gold_aire_india`:** tabla analítica principal con todos los registros y métricas.
-* **Vista `vw_dim_estaciones`:** dimensión con el catálogo único de las 763 estaciones, sus sensores, cobertura y coordenadas.
-* **Vista `vw_fact_calidad_aire_diaria`:** tabla de hechos con las concentraciones diarias, índices EAQI y NAQI y rankings.
-* **Vista `vw_top_peor_aire`:** ranking de las estaciones con peor calidad del aire ordenadas por fecha.
-
----
-
-## 7. Automatización con Apache Airflow (Docker)
-
-Para no tener que ejecutar el pipeline manualmente todos los días, el proyecto se conectó con **Apache Airflow** corriendo en **Docker Compose**.
-
-En el archivo [`dags/dag_calidad_aire_india.py`](dags/dag_calidad_aire_india.py) se creó el flujo automático (**DAG `etl_calidad_aire_india_medallion`**), que divide el trabajo en **7 pasos ordenados**:
-
-1. **`t1_extraer_excel_bronze`:** revisa y carga el archivo Excel de estaciones.
-2. **`t2_limpiar_excel_silver`:** limpia el catálogo de sensores y guarda el archivo Silver de sensores.
-3. **`t3_extraer_api_bronze`:** pide a la API de Open-Meteo los datos del día y guarda el JSON en Bronze.
-4. **`t4_limpiar_api_silver`:** limpia los datos horarios, los une con las estaciones y actualiza el archivo Silver horario.
-5. **`t5_construir_capa_gold`:** calcula los promedios diarios, el índice europeo (EAQI), el índice de India (NAQI) y los rankings en la capa Gold.
-6. **`t6_validar_calidad_integracion`:** revisa que no haya datos duplicados, vacíos ni fuera de rango antes de tocar la base de datos. Si algo está mal, detiene el proceso y avisa del error.
-7. **`t7_cargar_postgres_datawarehouse`:** sube los resultados validados directamente a **PostgreSQL (`DB_GOLD_INDIA`)** para verlos en pgAdmin.
-
-### ¿Cómo se usa desde el navegador?
-1. Se levanta Airflow con Docker (`docker compose up -d` en la carpeta `airflow-medallon`).
-2. Se entra a **[http://localhost:8080](http://localhost:8080)**.
-3. Ahí aparece el flujo **`etl_calidad_aire_india_medallion`**, donde se puede ejecutar con un clic y ver en verde cada uno de los 7 pasos y sus registros de ejecución.
-
----
-
-## 8. Columnas principales de la Capa Gold (`data/gold/gold_aire_india.csv`)
-
-| Grupo | Columnas principales | Descripción sencilla |
-| :--- | :--- | :--- |
-| **Identificación** | `location_id`, `location_name`, `latitude`, `longitude` | ID, nombre y coordenadas reales de la estación. |
-| **Red de sensores (Excel)** | `total_contaminantes`, `contaminantes_monitoreados`, `mide_pm2_5`...`mide_o3`, `nivel_cobertura`, `dias_operacion_max`, `estacion_activa_reciente` | Qué sensores tiene la estación, cuántos días operó y si estuvo activa en el último año. |
-| **Control de celda y distancia** | `id_punto_consulta`, `n_estaciones_mismo_punto`, `valor_compartido`, `distancia_modelo_km` | En qué celda de 11 km cayó la estación, cuántas estaciones comparten esa celda y a cuántos km está del punto del modelo. |
-| **Contaminantes del día (API)** | `fecha_lectura`, `pm2_5_promedio_dia`, `pm2_5_max_dia`, `pm10_promedio_dia`, `no2_promedio_dia`, `so2_promedio_dia`, `co_promedio_dia`, `o3_promedio_dia` | Promedios y máximos diarios modelados en $\mu\text{g/m}^3$. |
-| **Índices de Calidad del Aire** | `aqi_promedio_dia`, `categoria_aqi_predominante`, `naqi_india_promedio_dia`, `categoria_naqi_india`, `contaminante_dominante_naqi` | Calidad del aire evaluada tanto con la norma europea (EAQI) como con la norma oficial de India (NAQI - CPCB). |
-| **Lectura de la hora actual** | `hora_lectura_actual`, `pm2_5_actual`...`aqi_actual`, `naqi_india_actual` | Última lectura horaria disponible en el día. |
-| **Rankings diarios** | `ranking_peor_aire`, `ranking_peor_aire_naqi`, `ranking_peor_aire_celda` | Posición de la estación ($1 = \text{peor aire del día}$) según EAQI, según NAQI India y por celda única. |
+* **Modelo por celda (~11 km) vs. estación física:** Open-Meteo entrega el valor modelado por Copernicus CAMS para cuadros de $0.1^\circ$ ($\sim 11\text{ km}$). De las **763 estaciones**, se consultan **460 celdas únicas** y **427 estaciones** en ciudades densas comparten celda con estaciones cercanas (documentado en `reporte_coordenadas_compartidas.csv` y `distancia_modelo_km`, media **4.19 km**).
+* **Doble índice de calidad del aire (EAQI + NAQI India):** además del índice europeo (`aqi_promedio_dia`), se calcula el índice oficial de India (`naqi_india_promedio_dia`, escala 0–500 de CPCB) junto con su contaminante crítico (`contaminante_dominante_naqi`).
+* **Tablas y vistas en pgAdmin (`DB_GOLD_INDIA`):** la carga crea y mantiene al día sin duplicados la tabla `gold_aire_india` y las vistas analíticas `vw_dim_estaciones`, `vw_fact_calidad_aire_diaria` y `vw_top_peor_aire`.
+* **Informe detallado y pruebas P1–P5:** consulta **[`INFORME_CORTO_LABORATORIO.md`](INFORME_CORTO_LABORATORIO.md)** para el análisis técnico completo y la carpeta **[`evidencias/`](evidencias/)** para los registros de prueba del laboratorio.

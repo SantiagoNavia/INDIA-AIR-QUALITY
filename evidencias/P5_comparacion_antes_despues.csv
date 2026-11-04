@@ -1,0 +1,9 @@
+metrica,antes_reejecucion,despues_reejecucion,diferencia
+Total de filas en gold_final.csv,2289.0,2289.0,0.0
+"Duplicados en clave (location_id, fecha_lectura)",0.0,0.0,0.0
+Estaciones unicas monitoreadas,763.0,763.0,0.0
+KPI_01 - NAQI India promedio nacional,125.76,125.76,0.0
+KPI_02 - EAQI Europeo promedio nacional,69.62,69.62,0.0
+KPI_03 - Excedencia umbral OMS PM2.5 > 15 ug/m3 (%),88.69,88.69,0.0
+KPI_04 - Cobertura Red Completa >= 5 contaminantes (%),89.91,89.91,0.0
+KPI_05 - Distancia media estacion vs celda CAMS (km),4.19,4.19,0.0

@@ -1,8 +1,22 @@
 {
-  "orquestador": "Apache Airflow",
-  "timestamp": "2026-11-02T16:49:05",
+  "orquestador": "Apache Airflow (etl_green_data_hourly)",
   "estado": "OK",
-  "calidad": {
+  "validado_utc": "2026-11-04T06:00:54+00:00",
+  "gold_final": {
+    "archivo_gold_verificado": "data/gold/gold_final.csv",
+    "filas_gold": 3052,
+    "estaciones_unicas": 763,
+    "fechas_cubiertas": [
+      "2026-10-14",
+      "2026-10-15",
+      "2026-11-02",
+      "2026-11-04"
+    ],
+    "duplicados_clave_primaria": 0,
+    "esquema_valido": true,
+    "consistencia_kpi_ok": true
+  },
+  "calidad_integracion": {
     "unicidad_claves_ok": true,
     "coordenadas_en_india_ok": true,
     "rangos_contaminantes_ok": true,
@@ -17,5 +31,19 @@
     "estaciones_sobre_umbral_distancia": 0,
     "estaciones_activas_ultimo_anio": 629,
     "estaciones_inactivas_con_dato_modelado": 134
+  },
+  "resumen_kpi": {
+    "estaciones": 763,
+    "filas_lote": 3052,
+    "filas_totales": 3052,
+    "tabla_kpi_path": "data/gold/tabla_kpi_resumen.csv",
+    "gold_final_path": "data/gold/gold_final.csv",
+    "gold_compat_path": "data/gold/gold_aire_india.csv",
+    "postgres_registros": 3052,
+    "eaqi_promedio_nacional": 70.44,
+    "pct_excedencia_oms_pm25": 89.58,
+    "pm2_5_promedio_nacional": 51.83,
+    "filas_previas_conservadas": 0,
+    "naqi_india_promedio_nacional": 132.57
   }
 }
